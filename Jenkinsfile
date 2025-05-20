@@ -5,7 +5,7 @@ pipeline {
        go "1.24.1"
     }
 
-    trigers{
+    triggers{
         pollSCM('*/1 * * * *') //poll git every 1 min
     }
 
