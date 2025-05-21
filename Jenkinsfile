@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-       go "1.24.1"
+        go "1.24.1"
     }
 
     triggers{
@@ -10,6 +10,11 @@ pipeline {
     }
 
     stages {
+        stage('Test'){
+            steps {
+                sh "go test -v ./..."
+            }
+        }
         stage('Build') {
             steps {
                 sh "go build project/main.go"
