@@ -12,22 +12,18 @@ type Simple struct {
     Description string
     Url         string
 }
+
 func SimpleFactory(host string) Simple {
-    return Simple{"Hello", "World", host}
+    return Simple{"Hello", "Dear Students!!!", host}
 }
 
-// func handler(w http.ResponseWriter, r *http.Request) {
-//     simple := Simple{"Hello", "World", r.Host}
-
-
-//     jsonOutput, _ := json.Marshal(simple)
-
-//     w.Header().Set("Content-Type", "application/json")
-
-//     fmt.Fprintln(w, string(jsonOutput))
-// }
 func handler(w http.ResponseWriter, r *http.Request) {
+    // simple := Simple{"Hello", "Dear Students!", r.Host}
     simple := SimpleFactory(r.Host)
+
+    jsonOutput, _ := json.Marshal(simple)
+
+    fmt.Fprintln(w, string(jsonOutput))
 }
 
 func main() {
