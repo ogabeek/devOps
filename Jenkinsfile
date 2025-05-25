@@ -46,7 +46,7 @@ pipeline {
             keyFileVariable: 'SSH_KEY',
             usernameVariable: 'SSH_USER'
         )]) {
-          sh '''
+          sh """
             #!/usr/bin/env bash
             set -xe
 
@@ -55,20 +55,20 @@ pipeline {
             # Ensure binary is executable
             chmod +x ${APP_NAME}
 
-            # Stop old service (ignore error if not running)
-            ssh -o StrictHostKeyChecking=no -i "${SSH_KEY}" \
-                "${SSH_USER}@${TARGET_HOST}" \
+            # Stop old service (ignore if it wasn’t running)
+            ssh -o StrictHostKeyChecking=no -i \"${SSH_KEY}\" \
+                \"${SSH_USER}@${TARGET_HOST}\" \
                 'sudo systemctl stop ${SERVICE_NAME} || true'
 
             # Copy both the binary and the service unit file
-            scp -o StrictHostKeyChecking=no -i "${SSH_KEY}" \
-                "${APP_NAME}" \
-                "${SERVICE_NAME}" \
-                "${SSH_USER}@${TARGET_HOST}:/home/${SSH_USER}/"
+            scp -o StrictHostKeyChecking=no -i \"${SSH_KEY}\" \
+                \"${APP_NAME}\" \
+                \"${SERVICE_NAME}\" \
+                \"${SSH_USER}@${TARGET_HOST}:/home/${SSH_USER}/\"
 
-            # Single SSH session to move files & restart
-            ssh -o StrictHostKeyChecking=no -i "${SSH_KEY}" \
-                "${SSH_USER}@${TARGET_HOST}" << 'EOF'
+            # One SSH session to move files & restart
+            ssh -o StrictHostKeyChecking=no -i \"${SSH_KEY}\" \
+                \"${SSH_USER}@${TARGET_HOST}\" << 'EOF'
               set -xe
               sudo mkdir -p ${REMOTE_APP_DIR}
               sudo mv /home/${SSH_USER}/${APP_NAME}      ${REMOTE_APP_DIR}/${APP_NAME}
@@ -76,7 +76,7 @@ pipeline {
               sudo systemctl daemon-reload
               sudo systemctl enable --now ${SERVICE_NAME}
 EOF
-          '''
+          """
         }
       }
     }
