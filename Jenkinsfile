@@ -35,27 +35,70 @@ pipeline {
       }
     }
 
-    stage('Deploy') {
-      steps {
-        echo "→ Deploying ${APP_NAME} & ${SERVICE_NAME} to ${TARGET_HOST}"
-        sshagent (credentials: ['target-ssh-key']) {
-          sh """
-            set -e
-            echo "→ Uploading files…"
-            scp -o StrictHostKeyChecking=no ${APP_NAME} \
-                ${SERVICE_NAME} \
-                ${DEPLOY_USER}@${TARGET_HOST}:/home/${DEPLOY_USER}/
 
-            echo "→ Running remote service update…"
-            ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${TARGET_HOST} << 'EOF'
-              sudo systemctl stop ${SERVICE_NAME} || true
-              sudo mkdir -p ${REMOTE_APP_DIR}
-              sudo mv /home/${DEPLOY_USER}/${APP_NAME}      ${REMOTE_APP_DIR}/${APP_NAME}
-              sudo mv /home/${DEPLOY_USER}/${SERVICE_NAME}  /etc/systemd/system/${SERVICE_NAME}
-              sudo systemctl daemon-reload
-              sudo systemctl enable --now ${SERVICE_NAME}
-            EOF
-          """
+
+
+
+
+
+stage('Deploy') {
+  steps {
+    echo "→ [Deploy] Starting at ${new Date().format("HH:mm:ss")}"
+    echo "→ [Deploy] Workspace:"
+    sh 'ls -R . || true'
+
+    // bind both SSH key _and_ username into env vars
+    withCredentials([sshUserPrivateKey(
+        credentialsId: 'target-ssh-key',
+        keyFileVariable: 'SSH_KEY',
+        usernameVariable: 'SSH_USER'
+    )]) {
+      // turn on bash debugging so you see every single command
+      sh '''
+        #!/usr/bin/env bash
+        set -xe
+
+        echo "→ [Deploy] Deploying ${APP_NAME} & ${SERVICE_NAME} to ${SSH_USER}@${TARGET_HOST}"
+
+        # ensure our binary is executable
+        chmod +x ${APP_NAME}
+
+        # stop old service (ignore failures)
+        ssh -o StrictHostKeyChecking=no -i "${SSH_KEY}" "${SSH_USER}@${TARGET_HOST}" \
+            'sudo systemctl stop ${SERVICE_NAME} || true'
+
+        # copy both the binary and the unit file
+        scp -o StrictHostKeyChecking=no -i "${SSH_KEY}" \
+            "${APP_NAME}" \
+            "${SERVICE_NAME}" \
+            "${SSH_USER}@${TARGET_HOST}:/home/${SSH_USER}/"
+
+        # one SSH session to move files & restart
+        ssh -o StrictHostKeyChecking=no -i "${SSH_KEY}" "${SSH_USER}@${TARGET_HOST}" << 'EOF'
+          set -xe
+          sudo mkdir -p ${REMOTE_APP_DIR}
+          sudo mv /home/${SSH_USER}/${APP_NAME}      ${REMOTE_APP_DIR}/${APP_NAME}
+          sudo mv /home/${SSH_USER}/${SERVICE_NAME}  /etc/systemd/system/${SERVICE_NAME}
+          sudo systemctl daemon-reload
+          sudo systemctl enable --now ${SERVICE_NAME}
+EOF
+      '''
+    }
+  }
+}
+
+
+
+
+    
+    
+
+
+
+
+
+
+    
         }
       }
     }
