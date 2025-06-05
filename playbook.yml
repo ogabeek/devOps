@@ -6,7 +6,7 @@
         src: main
         dest: /opt/main
 
-    - name: Create a unit file
+    - name: Create a unit fil
       become: True
       copy:
         src: main.service

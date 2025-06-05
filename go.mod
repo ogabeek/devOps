@@ -1,3 +1,3 @@
-module github.com/mprokopov/myapp
+module github.com/ogabeek/devOps
 
 go 1.24.3
