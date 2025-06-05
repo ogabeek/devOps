@@ -1,5 +1,5 @@
 # .github/workflows/ci.yml
-name: Go CI & Docker
+name: Jenkins
 
 on:
   push:
