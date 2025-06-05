@@ -8,7 +8,8 @@ on:
 jobs:
   build:
     # This must match the labels your self-hosted runner advertises:
-    runs-on: [ self-hosted, Linux, X64 ]
+    runs-on: ubuntu-latest
+
 
     steps:
       # 1) Check out the repo
