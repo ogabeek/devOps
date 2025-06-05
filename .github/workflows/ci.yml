@@ -1,5 +1,5 @@
 # .github/workflows/ci.yml
-name: jenkins
+name: Go CI & Docker
 
 on:
   push:
@@ -7,61 +7,38 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # This must match the labels your self-hosted runner advertises:
+    runs-on: [ self-hosted, Linux, X64 ]
 
     steps:
+      # 1) Check out the repo
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2) Install Go 1.24.1
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: 1.24.1
 
+      # 3) Verify Go
       - name: Verify Go version
         run: go version
 
+      # 4) Run unit tests
       - name: Run unit tests
         run: go test -v ./...
 
+      # 5) Build the Go binary (produces ./main)
       - name: Build Go binary
         run: |
           go build -o main main.go
           chmod +x main
 
-      # Optional: upload the binary as an artifact
-      - name: Upload built binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: myapp-binary
-          path: main
-          retention-days: 1
-
-      # Docker login / build / push
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
+      # 6) Build Docker image (assumes Dockerfile is at repo root)
       - name: Build Docker image
-        run: |
-          docker build . -t myusername/myrepo:latest
+        run: docker build . --tag ttl.sh/myapp:1h
 
+      # 7) Push the image to TTL.sh
       - name: Push Docker image
-        run: |
-          docker push myusername/myrepo:latest
-
-      # Optional: deploy via SSH
-      - name: Copy SSH key
-        if: ${{ secrets.TARGET_SSH_KEY != '' }}
-        run: |
-          echo "${{ secrets.TARGET_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-
-      - name: Deploy to server
-        if: ${{ secrets.TARGET_SSH_KEY != '' }}
-        run: |
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key main laborant@your-server.example.com:/opt/myapp/main
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key laborant@your-server.example.com \
-            "sudo systemctl restart myapp.service"
+        run: docker push ttl.sh/myapp:1h
