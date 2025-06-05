@@ -1,12 +1,10 @@
 pipeline {
     agent any
 
-    tools {
-       go "1.24.3"
-    }
+    tools { go "1.24.1" }   // Make sure Jenkins has a Go tool named “1.24.1”
 
     triggers {
-        pollSCM('*/1 * * * *') // Poll Git repository every 1 minute
+        pollSCM('H/1 * * * *') // poll Git every minute
     }
 
     stages {
@@ -15,24 +13,19 @@ pipeline {
                 sh "go test -v ./..."
             }
         }
-        stage('Build') {
+        stage('Build Binary') {
             steps {
-                sh "go build main.go"
+                sh "go build -o main main.go"
             }
         }
-        stage('Deploy') {
+        stage('Build Docker Image') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'target-ssh-key',
-                                                   keyFileVariable: 'ssh_key',
-                                                   usernameVariable: 'ssh_user')]) {
-                    sh """
-
-chmod +x main
-
-ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook --inventory hosts.ini playbook.yaml --key-file=${ssh_key}
-"""
-
-}
+                sh "docker build . --tag ttl.sh/myapp:1h"
+            }
+        }
+        stage('Push Docker Image') {
+            steps {
+                sh "docker push ttl.sh/myapp:1h"
             }
         }
     }
